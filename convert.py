@@ -6,6 +6,9 @@
 # The format of the input-data is described by input-data-format.html or
 # http://tdc-www.harvard.edu/catalogs/ub1.format.html
 
+# If you just want some data to test with without downloading torrent, then use the supplied
+# sample.cat, place it as input-data/000/b0000.cat (sample.cat is a copy of that datafile) from the torrent.
+
 import os
 import struct
 import math
