@@ -1,13 +1,13 @@
 # Written by Karl Zylinski (karl@zylinski.se)
 
 # Input-data can be downloaded using torrent supplied next to this file, input-data.torrent.
-# The data should be placed inside input-data folder and extracted so that the paths look like
+# The data should be placed inside input-data folder and extracted so that the paths look like:
 # input-data/000/b0000.cat, input-data/000/b0001.cat etc.
 # The format of the input-data is described by input-data-format.html or
 # http://tdc-www.harvard.edu/catalogs/ub1.format.html
 
-# If you just want some data to test with without downloading torrent, then use the supplied
-# sample.cat, place it as input-data/000/b0000.cat (sample.cat is a copy of that datafile) from the torrent.
+# If you just want some data to test with without downloading torrent, then use the supplied sample.cat,
+# place it as input-data/000/b0000.cat (sample.cat is a copy of that datafile from the torrent).
 
 import os
 import struct
@@ -43,13 +43,9 @@ def get_packed_field(packed_field, packed_field_exp_len, start, field_len):
 file_out.write(str.join(",", columns) + "\n")
 
 while file_in.tell() != file_in_size:
+    # Indices to variable raw_fields refer to the different packed ints described in format (see comment at top). I process the fields in exactly the same order as in the format and
+    # use quantas and ranges specified there to extract values.
     raw_fields = struct.unpack('%di' % 20, file_in.read(80))
-    # Indices to raw_fields refer to the different
-    # packed ints described here:
-    # http://tdc-www.harvard.edu/catalogs/ub1.format.html
-    # or see input-data-format.html alongside this file.
-    # I process them in exactly the same order and use
-    # quantas and ranges specified there to extract values.
 
     out_fields = []
     ra = raw_fields[0] / 100 / 60 / 60
