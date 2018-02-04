@@ -1,0 +1,83 @@
+
+<!-- saved from url=(0051)http://tdc-www.harvard.edu/catalogs/ub1.format.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Format for Each Entry in the USNO-B Catalog</title>
+</head><body bgcolor="white" text="black">
+<center>
+<table>
+<tbody><tr><td></td><td align="center"><h1>The <a href="http://tdc-www.harvard.edu/catalogs/ub1.html">USNO-B1.0 Catalog</a>
+<br>Entry Format</h1>
+</td></tr></tbody></table></center>
+The USNO-B1.0 Catalog is distributed as a directory structure on a hard disk.
+There are 180 directories (000-179) which each contain a portion of the
+catalog covering 1 degree of South Polar Distance (SPD=Declination+90 degrees).
+Each directory contains 10 catalog files, each containing a 0.1-degree zone
+of the catalog called bzzzz.cat, where zzzz is the SPD in tenth-degrees from
+0000 to 1799. There are also 10 accelerator files which give the star number
+within the zone every 15 minutes of right ascension.
+<a href="http://tdc-www.harvard.edu/wcstools/">WCSTools</a> does not use the accelerator files.
+<center><table border="2">
+<tbody><tr><th>Bytes</th><th>Packing<sup>a</sup></th><th>Field</th><th>Description</th><th>Quanta</th><th>Decimal Range</th>
+</tr><tr><td>0 - 3</td><td>aaaaaaaaa</td><td><br></td><td>J2000 epoch 2000.0 RA</td><td>0.01 arcsec</td><td>0.00 - 1,295,999.99 arcsec</td></tr>
+<tr><td>4 - 7</td><td>ssssssss</td><td><br></td><td>J2000 epoch 2000.0 SPD</td><td>0.01 arcsec</td><td>0.00 - 648,000.00 arcsec</td></tr>
+<tr><td>8 - 11</td><td>iPSSSSAAAA</td><td>AAAA</td><td>µ<sub>RA</sub><sup>b</sup></td><td>0.002 arcsec/year</td><td>-10.000 - +9.998 arcsec/year</td></tr>
+<tr><td><br></td><td><br></td><td>SSSS</td><td>µ<sub>SPD<sub><sup>b</sup></sub></sub></td><td>0.002 arcsec/year</td><td>-10.000 - +9.998 arcsec/year</td></tr>
+<tr><td><br></td><td><br></td><td>P</td><td>total µ probability</td><td>0.1</td><td>0.0 - 0.9</td></tr>
+<tr><td><br></td><td><br></td><td>i</td><td colspan="3">motion catalog flag:  0=no, 1=yes<sup>c</sup></td></tr>
+<tr><td>12- 15</td><td>jMRQyyyxxx</td><td>xxx</td><td>sigma<sub>µ<sub>RA</sub></sub><sup>b</sup></td><td>0.001 arcsec/year</td><td>0.000 - 0.999 arcsec/year</td></tr>
+<tr><td><br></td><td><br></td><td>yyy</td><td>sigma<sub>µ<sub>SPD</sub></sub><sup>b</sup></td><td>0.001 arcsec/year</td><td>0.000 - 0.999 arcsec/year</td></tr>
+<tr><td><br></td><td><br></td><td>Q</td><td>sigma<sub>RA<sub>fit</sub></sub><sup>b</sup></td><td>0.1 arcsec</td><td>0.0 - 0.9 arcsec</td></tr>
+<tr><td><br></td><td><br></td><td>R</td><td>sigma<sub>SPD<sub>fit</sub></sub><sup>b</sup></td><td>0.1 arcsec</td><td>0.0 - 0.9 arcsec</td></tr>
+<tr><td><br></td><td><br></td><td>M</td><td>Number of detections</td><td><br></td><td>2 - 5<sup>d</sup></td></tr>
+<tr><td><br></td><td><br></td><td>j</td><td colspan="3">diffraction spike flag: 0=no, 1=yes<sup>e</sup></td></tr>
+<tr><td>16 - 19</td><td>keeevvvuuu</td><td>uuu</td><td>sigma<sub>RA</sub><sup>b</sup></td><td> 0.001 arcsec</td><td> 0.000 - 0.999 arcsec</td></tr>
+<tr><td><br></td><td><br></td><td>vvv</td><td>sigma<sub>SPD</sub><sup>b</sup></td><td>0.001 arcsec</td><td>0.000 - 0.999 arcsec</td></tr>
+<tr><td><br></td><td><br></td><td>eee</td><td>mean epoch - 1950.0</td><td>0.1 year</td><td>1950.0 - 2049.9</td></tr>
+<tr><td><br></td><td><br></td><td>k</td><td colspan="3">YS4.0 correlation flag: 0=no, 1=yes<sup>f</sup></td></tr>
+<tr><td>20 - 2</td><td>GGSFFFmmmm</td><td>mmmm</td><td>1st blue magnitude</td><td>0.01 mag</td><td>0.00 - 99.99 mag</td></tr>
+<tr><td><br></td><td><br></td><td>FFF</td><td>1st blue field</td><td><br></td><td>1 - 937<sup>g</sup></td></tr>
+<tr><td><br></td><td><br></td><td>S</td><td>1" blue survey</td><td><br></td><td>0 - 9<sup>h</sup></td></tr>
+<tr><td><br></td><td><br></td><td>GG</td><td colspan="2">1st blue star/galaxy</td><td>0 - 11<sup>i</sup></td></tr>
+<tr><td>24 - 27</td><td>GGSFFFmmmm</td><td colspan="4">same as above except for 1<sup>st</sup> red survey</td></tr>
+<tr><td>28 - 31</td><td>GGSFFFmmmm</td><td colspan="4">same as above except for 2<sup>nd</sup> blue survey</td></tr>
+<tr><td>32 - 35</td><td>GGSFFFmmmm</td><td colspan="4">same as above except for 2<sup>nd</sup> red survey</td></tr>
+<tr><td>36 - 39</td><td>GGSFFFmmmm</td><td colspan="4">same as above except for N survey</td></tr>
+<tr><td>40 - 43</td><td>CrrrrRRRR</td><td>RRRR</td><td>1st blue xi residual<sup>b</sup></td><td>0.01 arcsec</td><td>-50.00 - +49.99 arcsec</td></tr>
+<tr><td><br></td><td><br></td><td>rrrr</td><td>1st blue eta residual<sup>b</sup></td><td>0.01 arcsec</td><td>-50.00 - +49.99 arcsec
+</td></tr><tr><td><br></td><td><br></td><td>C</td><td colspan="2">source of photometric calibration</td><td>0 - 9<sup>j</sup></td></tr>
+<tr><td>44 - 47</td><td>CrrrrRRRR</td><td colspan="4">same as above except for 1<sup>st</sup> red survey</td></tr>
+<tr><td>48 - 51</td><td>CrrrrRRRR</td><td colspan="4">same as above except for 2<sup>nd</sup> blue survey</td></tr>
+<tr><td>52 - 55</td><td>CrrrrRRRR</td><td colspan="4">same as above except for 2<sup>nd</sup> red survey</td></tr>
+<tr><td>56 - 59</td><td>CrrrrRRRR</td><td colspan="4">same as above except for N survey</td></tr>
+<tr><td>60 - 63</td><td>iiiiiii</td><td><br></td><td colspan="3">1st blue lookback index into PMM scan file</td></tr>
+<tr><td>64 - 67</td><td>iiiiiii</td><td><br></td><td colspan="3">same as above except for 1<sup>st</sup> red survey</td></tr>
+<tr><td>68 - 71</td><td>iiiiiii</td><td><br></td><td colspan="3">same as above except for 2<sup>nd</sup> blue survey</td></tr>
+<tr><td>72 - 75</td><td>iiiiiii</td><td><br></td><td colspan="3">same as above except for 2<sup>nd</sup> red survey</td></tr>
+<tr><td>76 - 79</td><td>iiiiiii</td><td><br></td><td colspan="3">same as above except for N survey</td></tr>
+</tbody></table>
+</center>
+Note. - To preserve a fixed length record for an arbitrary set of detections, the fields associated with a missing survey in the three survey dependent segments (bytes 20 - 39, 40 - 59, 60 - 79) are set to zero. The number of non-zero entries in each segment will agree with the number of detections M contained in bytes 12 - 15. Tycho-2 star entries have the same length and a similar (but not identical) format.
+<p>
+<sup>a</sup>
+Fields seen when the packed integer is printed as a base-10 integer. Combinations of integer division and subtraction are used to extract a particular field.
+</p><p><sup>b</sup>
+The calculation for position and motion is done in the tangent plane using the standard coordinates ~ and 71 with the mean position taken as the tangent point. This is an approximation, and will be incorrect for the most demanding of applications.
+</p><p><sup>c</sup>
+Objects with large proper motions were cross-correlated with the LHS (Luyten 1979a), the NLTT (Luyten 1979b), and the Lowell Proper Motion Survey (Giclas et al. 1971, Giclas et al. 1978). This flag is set if the USNO-B detection has a correlation in any of these catalog, but the data presented are from the PMM and not from the proper motion catalog.
+</p><p><sup>d</sup>
+M = 0 denotes Tycho-2 stars, M = 1 objects are omitted from USNO-B but saved in catalog of rejects.
+</p><p><sup>e</sup>
+Diffraction spikes from bright stars cause spurious PMM detections. Occasionally, these will correlate to produce a spurious object. The distance to and bearing of the nearest Tycho-2 star was computed, and the flag is set if the distance is within 5 times the radius computed by King and Raff (1977) and the bearing is within 5 degrees of the cardinal points (0, 90, 180, and 270 degrees).
+</p><p><sup>f</sup>
+This object was correlated with an object in the YS4.0 catalog (Monet in prep.), and therefore contributes in the solution for the mean proper motion of the field.
+</p><p><sup>g</sup>
+Field number in original survey as shown in Table 1.
+</p><p><sup>h</sup>
+Surveys encoded as 0=POSS-I 0, 1=POSS-I E, 2=POSS-II J, 3=POSS-II F, 4=SERC-J or SERC-EJ, 5=ESO-R or SERC-ER, 6=AAO-R, 7=POSS-II N, 8=SERC-I, 9=POSS-II N field number but plate taken as part of SERC-I.
+</p><p><sup>i</sup>
+The star/galaxy estimator is a measure of the similarity of the image to a stellar point spread function. 0 means quite dissimilar and 11 means quite similar.
+</p><p><sup>j</sup>
+Photometric calibration source: 0=bright photometric standards on plate, 1=faint photometric standards 0 plates away (i.e., on this plate), 2=faint photometric standards 1 plate away (i.e., on overlap plate), 3=faint photometric standards 2 plates away (i.e., on overlap of overlap plate), etc.
+
+
+</p></body></html>
