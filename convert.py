@@ -13,8 +13,12 @@ import os
 import struct
 import math
 
-columns = ["J2000 RA", "J2000 DEC", "pm RA", "pm DEC", "pm prob", "pm catalog correction"]
-units = ["deg", "deg", "mas/year", "mas/year", "0.1", "0 or 1"]
+columns = ["J2000 ra", "J2000 dec",
+           "pm ra", "pm dec", "pm prob", "pm catalog correction",
+           "pm ra sigma", "pm dec sigma", "pm ra fit sigma", "pm dec fit sigma", "num detections"]
+units = ["deg", "deg",
+         "mas/year", "mas/year", "0.1", "0 or 1",
+         "mas/year", "mas/year", "0.1 arcsec", "0.1 arcsec", "count"]
 descriptions = ["Right ascension at J2000",
                 "Declination at J2000",
                 "Proper motion in RA, see 'pm catalog flag'"
@@ -56,17 +60,28 @@ while file_in.tell() != file_in_size:
     out_fields.append("%.6f" % dec)
     
     rf2 = raw_fields[2]
-    pm_ra = get_packed_field(rf2, 10, 6, 4) * 2 - 10000;
+    pm_ra = get_packed_field(rf2, 10, 6, 4) * 2 - 10000
     out_fields.append("%i" % pm_ra)
-    pm_dec = get_packed_field(rf2, 10, 2, 4) * 2 - 10000;
+    pm_dec = get_packed_field(rf2, 10, 2, 4) * 2 - 10000
     out_fields.append("%i" % pm_dec)
-    pm_prob = get_packed_field(rf2, 10, 1, 1);
+    pm_prob = get_packed_field(rf2, 10, 1, 1)
     out_fields.append("%i" % pm_prob)
-    pm_catalog_correction_flag = get_packed_field(rf2, 10, 0, 1);
+    pm_catalog_correction_flag = get_packed_field(rf2, 10, 0, 1)
     out_fields.append("%i" % pm_catalog_correction_flag)
 
-    file_out.write(str.join(",", out_fields) + "\n")
+    rf3 = raw_fields[3]
+    pm_ra_sigma = get_packed_field(rf3, 10, 7, 3)
+    out_fields.append("%i" % pm_ra_sigma)
+    pm_dec_sigma = get_packed_field(rf3, 10, 4, 3)
+    out_fields.append("%i" % pm_dec_sigma)
+    pm_ra_fit_sigma = get_packed_field(rf3, 10, 3, 1)
+    out_fields.append("%i" % pm_ra_fit_sigma)
+    pm_dec_fit_sigma = get_packed_field(rf3, 10, 2, 1)
+    out_fields.append("%i" % pm_dec_fit_sigma)
+    num_detections = get_packed_field(rf3, 10, 1, 1)
+    out_fields.append("%i" % num_detections)
 
+    file_out.write(str.join(",", out_fields) + "\n")
 
 file_in.close()
 file_out.close()
