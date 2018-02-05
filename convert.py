@@ -13,7 +13,8 @@ import os
 import struct
 import math
 
-columns = [ "j2000_ra",
+columns = [ "usno_b1_id",
+            "j2000_ra",
             "j2000_dec",
             "pm_ra",
             "pm_dec",
@@ -69,7 +70,9 @@ columns = [ "j2000_ra",
             "blue_2_scan_lookback_index",
             "red_2_scan_lookback_index",
             "ir_scan_lookback_index" ]
-units = [ "deg",
+
+units = [ "id number in catalog",
+          "deg",
           "deg",
           "mas/year",
           "mas/year",
@@ -128,11 +131,6 @@ units = [ "deg",
 
 assert len(columns) == len(units), "Mismatch between columns and their units"
 
-file_out = open("output.csv", mode="w")
-file_in_path = "input-data/000/b0000.cat"
-file_in = open(file_in_path, mode="rb")
-file_in_size = os.path.getsize(file_in_path)
-
 # Gets field from packed int. For example we might have 4718914587 where
 # different parts of the int measure different things.
 def get_packed(packed_field, packed_field_exp_len, start, field_len):
@@ -143,184 +141,232 @@ def get_packed(packed_field, packed_field_exp_len, start, field_len):
     extracted = packed_field_s[start_corr:start_corr+field_len]
     return 0 if extracted == '' else int(extracted)
 
-#if size % rowlength != 0:
+zone_number = 0
+prev_folder = ""
+output_counter = 0
+output_max_file_size = 209715200 # 200 megabytes
 
-    #continue
+class OutputFile:
+    index = -1
+    handle = None
 
-file_out.write(str.join(",", columns) + "\n")
-row_length = 80
-packed_ints_per_row = 20
+def start_new_output_file(current_file):
+    if current_file != None:
+        current_file.handle.close()
+    num = 0 if current_file == None else current_file.index + 1
+    new_name = "output" + ("%i" % num) + ".csv"
+    print("Starting new output file: " + new_name)
+    handle = open(new_name, mode="w")
+    handle.write(str.join(",", columns) + "\n")
+    output_file = OutputFile()
+    output_file.index = num
+    output_file.handle = handle
+    return output_file
 
-while file_in.tell() != file_in_size:
-    # Indices to variable raw_fields refer to the different packed ints described in format
-    # (see comment at top). I process the fields in exactly the same order as in the format and
-    # use quantas and ranges specified there to extract values. Any transformations other than
-    # quanta/range adjustments are explicitly explained below.
-    rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length))
+file_out = start_new_output_file(None)
 
-    out_fields = []
+while True:
+    if file_out.handle.tell() >= output_max_file_size:
+        file_out = start_new_output_file(file_out)
 
-    def add(fmt, val):
-        # Only do formatting if val is not zero
-        formatted = "0" if val == 0 else fmt % val
-        out_fields.append(formatted)
+    folder_name = ("%04i" % zone_number)[0:3]
 
-    # ra
-    add("%.6f", rfs[0] / 100 / 60 / 60) 
+    if prev_folder != folder_name:
+        print("Processing folder " + folder_name)
 
-    # dec -- Data uses south polar distance, subtract 90 deg
-    add("%.6f", rfs[1] / 100 / 60 / 60 - 90)
-    
-    # pm_ra
-    add("%i", get_packed(rfs[2], 10, 6, 4) * 2 - 10000)
-    # pm_dec
-    add("%i", get_packed(rfs[2], 10, 2, 4) * 2 - 10000)
-    # pm_prob
-    add("%i", get_packed(rfs[2], 10, 1, 1))
-    # pm_catalog_correction_flag
-    add("%i",  get_packed(rfs[2], 10, 0, 1))
+    prev_folder = folder_name
+    file_in_path = "input-data/" + folder_name + "/b" + ("%04i" % zone_number) + ".cat"
 
-    # pm_ra_sigma 
-    add("%i", get_packed(rfs[3], 10, 7, 3))
-    # pm_dec_sigma
-    add("%i", get_packed(rfs[3], 10, 4, 3))
-    # ra_fit_sigma
-    add("%i", get_packed(rfs[3], 10, 3, 1))
-    # dec_fit_sigma
-    add("%i", get_packed(rfs[3], 10, 2, 1))
-    # num_detections
-    add("%i", get_packed(rfs[3], 10, 1, 1))
-    # diffraction_spike_flag
-    add("%i", get_packed(rfs[3], 10, 0, 1))
+    if os.path.isfile(file_in_path) == False:
+        break
 
-    # ra_sigma
-    add("%i", get_packed(rfs[4], 10, 7, 3))
-    # dec_sigma
-    add("%i", get_packed(rfs[4], 10, 4, 3))
-    # epoch
-    add("%.1f", get_packed(rfs[4], 10, 1, 3) / 10 + 1950)
-    # ys4_correlation_flag 
-    add("%i", get_packed(rfs[4], 10, 0, 1))
+    file_in = open(file_in_path, mode = "rb")
+    file_in_size = os.path.getsize(file_in_path)
+    row_length = 80
 
-    # blue_1_mag
-    add("%.2f", get_packed(rfs[5], 10, 6, 4) / 100)
-    # blue_1_field
-    add("%i", get_packed(rfs[5], 10, 3, 3))
-    # blue_1_survey
-    add("%i", get_packed(rfs[5], 10, 2, 1))
-    # blue_1_galaxy_star_sep
-    add("%i", get_packed(rfs[5], 10, 0, 2))
+    if file_in_size % row_length != 0:
+        print("Skipped file " + file_in_path + ": Size is not a multiple of row length")
+        file_in.close()
+        continue
 
-    # red_1_mag
-    add("%.2f", get_packed(rfs[6], 10, 6, 4) / 100)
-    # red_1_field
-    add("%i", get_packed(rfs[6], 10, 3, 3))
-    # red_1_survey
-    add("%i", get_packed(rfs[6], 10, 2, 1))
-    # red_1_galaxy_star_sep
-    add("%i", get_packed(rfs[6], 10, 0, 2))
+    object_counter = 1
 
-    # blue_2_mag
-    add("%.2f", get_packed(rfs[7], 10, 6, 4) / 100)
-    # blue_2_field
-    add("%i", get_packed(rfs[7], 10, 3, 3))
-    # blue_2_survey
-    add("%i", get_packed(rfs[7], 10, 2, 1))
-    # blue_2_galaxy_star_sep
-    add("%i", get_packed(rfs[7], 10, 0, 2))
+    while file_in.tell() != file_in_size:
+        # Indices to variable raw_fields refer to the different packed ints described in format
+        # (see comment at top). I process the fields in exactly the same order as in the format and
+        # use quantas and ranges specified there to extract values. Any transformations other than
+        # quanta/range adjustments are explicitly explained below.
+        packed_ints_per_row = 20
+        rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length))
+        out_fields = []
 
-    # red_2_mag
-    add("%.2f", get_packed(rfs[8], 10, 6, 4) / 100)
-    # red_2_field
-    add("%i", get_packed(rfs[8], 10, 3, 3))
-    # red_2_survey
-    add("%i", get_packed(rfs[8], 10, 2, 1))
-    # red_2_galaxy_star_sep
-    add("%i", get_packed(rfs[8], 10, 0, 2))
+        def add(fmt, val):
+            # Only do formatting if val is not zero
+            formatted = "0" if val == 0 else fmt % val
+            out_fields.append(formatted)
 
-    # ir_mag
-    add("%.2f", get_packed(rfs[9], 10, 6, 4) / 100)
-    # ir_field
-    add("%i", get_packed(rfs[9], 10, 3, 3))
-    # ir_survey
-    add("%i", get_packed(rfs[9], 10, 2, 1))
-    # ir_galaxy_star_sep
-    add("%i", get_packed(rfs[9], 10, 0, 2))
+        # usno_b1_id
+        add("%s", ("%04i" % zone_number) + "-" + ("%07i" % object_counter))
 
-    # Below are some packed fields where an if-check is used, this is because these fields should
-    # be treated as missing when set to all zero. Otherwise we'd end up with -50 residual.
-    if rfs[10] == 0:
-        add("%i", 0)
-        add("%i", 0)
-        add("%i", 0)
-    else:
-        # blue_1_xi_res
-        add("%.2f", get_packed(rfs[10], 9, 5, 4) / 100 - 50)
-        # blue_1_eta_res
-        add("%.2f", get_packed(rfs[10], 9, 1, 4) / 100 - 50)
-        # blue_1_calibration_source
-        add("%i", get_packed(rfs[10], 9, 0, 1))
+        # ra
+        add("%.6f", rfs[0] / 100 / 60 / 60) 
 
-    if rfs[11] == 0:
-        add("%i", 0)
-        add("%i", 0)
-        add("%i", 0)
-    else:
-        # red_1_xi_res
-        add("%.2f", get_packed(rfs[11], 9, 5, 4) / 100 - 50)
-        # red_1_eta_res
-        add("%.2f", get_packed(rfs[11], 9, 1, 4) / 100 - 50)
-        # red_1_calibration_source
-        add("%i", get_packed(rfs[11], 9, 0, 1))
+        # dec -- Data uses south polar distance, subtract 90 deg
+        add("%.6f", rfs[1] / 100 / 60 / 60 - 90)
+        
+        # pm_ra
+        add("%i", get_packed(rfs[2], 10, 6, 4) * 2 - 10000)
+        # pm_dec
+        add("%i", get_packed(rfs[2], 10, 2, 4) * 2 - 10000)
+        # pm_prob
+        add("%i", get_packed(rfs[2], 10, 1, 1))
+        # pm_catalog_correction_flag
+        add("%i",  get_packed(rfs[2], 10, 0, 1))
 
-    if rfs[12] == 0:
-        add("%i", 0)
-        add("%i", 0)
-        add("%i", 0)
-    else:
-        # blue_2_xi_res
-        add("%.2f", get_packed(rfs[12], 9, 5, 4) / 100 - 50)
-        # blue_2_eta_res
-        add("%.2f", get_packed(rfs[12], 9, 1, 4) / 100 - 50)
-        # blue_2_calibration_source
-        add("%i", get_packed(rfs[12], 9, 0, 1))
+        # pm_ra_sigma 
+        add("%i", get_packed(rfs[3], 10, 7, 3))
+        # pm_dec_sigma
+        add("%i", get_packed(rfs[3], 10, 4, 3))
+        # ra_fit_sigma
+        add("%i", get_packed(rfs[3], 10, 3, 1))
+        # dec_fit_sigma
+        add("%i", get_packed(rfs[3], 10, 2, 1))
+        # num_detections
+        add("%i", get_packed(rfs[3], 10, 1, 1))
+        # diffraction_spike_flag
+        add("%i", get_packed(rfs[3], 10, 0, 1))
 
-    if rfs[13] == 0:
-        add("%i", 0)
-        add("%i", 0)
-        add("%i", 0)
-    else:
-        # red_2_xi_res
-        add("%.2f", get_packed(rfs[13], 9, 5, 4) / 100 - 50)
-        # red_2_eta_res
-        add("%.2f", get_packed(rfs[13], 9, 1, 4) / 100 - 50)
-        # red_2_calibration_source
-        add("%i", get_packed(rfs[13], 9, 0, 1))
+        # ra_sigma
+        add("%i", get_packed(rfs[4], 10, 7, 3))
+        # dec_sigma
+        add("%i", get_packed(rfs[4], 10, 4, 3))
+        # epoch
+        add("%.1f", get_packed(rfs[4], 10, 1, 3) / 10 + 1950)
+        # ys4_correlation_flag 
+        add("%i", get_packed(rfs[4], 10, 0, 1))
 
-    if rfs[14] == 0:
-        add("%i", 0)
-        add("%i", 0)
-        add("%i", 0)
-    else:
-        # ir_xi_res
-        add("%.2f", get_packed(rfs[14], 9, 5, 4) / 100 - 50)
-        # ir_eta_res
-        add("%.2f", get_packed(rfs[14], 9, 1, 4) / 100 - 50)
-        # ir_calibration_source
-        add("%i", get_packed(rfs[14], 9, 0, 1))
+        # blue_1_mag
+        add("%.2f", get_packed(rfs[5], 10, 6, 4) / 100)
+        # blue_1_field
+        add("%i", get_packed(rfs[5], 10, 3, 3))
+        # blue_1_survey
+        add("%i", get_packed(rfs[5], 10, 2, 1))
+        # blue_1_galaxy_star_sep
+        add("%i", get_packed(rfs[5], 10, 0, 2))
 
-    # blue_1_scan_lookback_index
-    add("%i", rfs[15])
-    # red_1_scan_lookback_index
-    add("%i", rfs[16])
-    # blue_2_scan_lookback_index
-    add("%i", rfs[17])
-    # red_2_scan_lookback_index
-    add("%i", rfs[18])
-    # ir_scan_lookback_index
-    add("%i", rfs[19])
+        # red_1_mag
+        add("%.2f", get_packed(rfs[6], 10, 6, 4) / 100)
+        # red_1_field
+        add("%i", get_packed(rfs[6], 10, 3, 3))
+        # red_1_survey
+        add("%i", get_packed(rfs[6], 10, 2, 1))
+        # red_1_galaxy_star_sep
+        add("%i", get_packed(rfs[6], 10, 0, 2))
 
-    file_out.write(str.join(",", out_fields) + "\n")
+        # blue_2_mag
+        add("%.2f", get_packed(rfs[7], 10, 6, 4) / 100)
+        # blue_2_field
+        add("%i", get_packed(rfs[7], 10, 3, 3))
+        # blue_2_survey
+        add("%i", get_packed(rfs[7], 10, 2, 1))
+        # blue_2_galaxy_star_sep
+        add("%i", get_packed(rfs[7], 10, 0, 2))
 
-file_in.close()
-file_out.close()
+        # red_2_mag
+        add("%.2f", get_packed(rfs[8], 10, 6, 4) / 100)
+        # red_2_field
+        add("%i", get_packed(rfs[8], 10, 3, 3))
+        # red_2_survey
+        add("%i", get_packed(rfs[8], 10, 2, 1))
+        # red_2_galaxy_star_sep
+        add("%i", get_packed(rfs[8], 10, 0, 2))
+
+        # ir_mag
+        add("%.2f", get_packed(rfs[9], 10, 6, 4) / 100)
+        # ir_field
+        add("%i", get_packed(rfs[9], 10, 3, 3))
+        # ir_survey
+        add("%i", get_packed(rfs[9], 10, 2, 1))
+        # ir_galaxy_star_sep
+        add("%i", get_packed(rfs[9], 10, 0, 2))
+
+        # Below are some packed fields where an if-check is used, this is because these fields should
+        # be treated as missing when set to all zero. Otherwise we'd end up with -50 residual.
+        if rfs[10] == 0:
+            add("%i", 0)
+            add("%i", 0)
+            add("%i", 0)
+        else:
+            # blue_1_xi_res
+            add("%.2f", get_packed(rfs[10], 9, 5, 4) / 100 - 50)
+            # blue_1_eta_res
+            add("%.2f", get_packed(rfs[10], 9, 1, 4) / 100 - 50)
+            # blue_1_calibration_source
+            add("%i", get_packed(rfs[10], 9, 0, 1))
+
+        if rfs[11] == 0:
+            add("%i", 0)
+            add("%i", 0)
+            add("%i", 0)
+        else:
+            # red_1_xi_res
+            add("%.2f", get_packed(rfs[11], 9, 5, 4) / 100 - 50)
+            # red_1_eta_res
+            add("%.2f", get_packed(rfs[11], 9, 1, 4) / 100 - 50)
+            # red_1_calibration_source
+            add("%i", get_packed(rfs[11], 9, 0, 1))
+
+        if rfs[12] == 0:
+            add("%i", 0)
+            add("%i", 0)
+            add("%i", 0)
+        else:
+            # blue_2_xi_res
+            add("%.2f", get_packed(rfs[12], 9, 5, 4) / 100 - 50)
+            # blue_2_eta_res
+            add("%.2f", get_packed(rfs[12], 9, 1, 4) / 100 - 50)
+            # blue_2_calibration_source
+            add("%i", get_packed(rfs[12], 9, 0, 1))
+
+        if rfs[13] == 0:
+            add("%i", 0)
+            add("%i", 0)
+            add("%i", 0)
+        else:
+            # red_2_xi_res
+            add("%.2f", get_packed(rfs[13], 9, 5, 4) / 100 - 50)
+            # red_2_eta_res
+            add("%.2f", get_packed(rfs[13], 9, 1, 4) / 100 - 50)
+            # red_2_calibration_source
+            add("%i", get_packed(rfs[13], 9, 0, 1))
+
+        if rfs[14] == 0:
+            add("%i", 0)
+            add("%i", 0)
+            add("%i", 0)
+        else:
+            # ir_xi_res
+            add("%.2f", get_packed(rfs[14], 9, 5, 4) / 100 - 50)
+            # ir_eta_res
+            add("%.2f", get_packed(rfs[14], 9, 1, 4) / 100 - 50)
+            # ir_calibration_source
+            add("%i", get_packed(rfs[14], 9, 0, 1))
+
+        # blue_1_scan_lookback_index
+        add("%i", rfs[15])
+        # red_1_scan_lookback_index
+        add("%i", rfs[16])
+        # blue_2_scan_lookback_index
+        add("%i", rfs[17])
+        # red_2_scan_lookback_index
+        add("%i", rfs[18])
+        # ir_scan_lookback_index
+        add("%i", rfs[19])
+
+        file_out.handle.write(str.join(",", out_fields) + "\n")
+        object_counter = object_counter + 1
+
+    file_in.close()
+    zone_number = zone_number + 1
+
+file_out.handle.close()
