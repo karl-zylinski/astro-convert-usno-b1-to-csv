@@ -141,7 +141,6 @@ def get_packed(packed_field, packed_field_exp_len, start, field_len):
     extracted = packed_field_s[start_corr:start_corr+field_len]
     return 0 if extracted == '' else int(extracted)
 
-zone_number = 0
 prev_folder = ""
 output_counter = 0
 output_max_file_size = 209715200 # 200 megabytes
@@ -164,8 +163,9 @@ def start_new_output_file(current_file):
     return output_file
 
 file_out = start_new_output_file(None)
+max_zone_number = 1799
 
-while True:
+for zone_number in range(0, max_zone_number + 1):
     if file_out.handle.tell() >= output_max_file_size:
         file_out = start_new_output_file(file_out)
 
@@ -367,6 +367,5 @@ while True:
         object_counter = object_counter + 1
 
     file_in.close()
-    zone_number = zone_number + 1
 
 file_out.handle.close()
