@@ -141,10 +141,10 @@ for zone_number in range(0, max_zone_number + 1):
         rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length))
         out_fields = []
 
-        def add(fmt, val):
+        def add(fmt, val, rep=1):
             # Only do formatting if val is not zero
             formatted = "0" if val == 0 else fmt % val
-            out_fields.append(formatted)
+            out_fields.extend([formatted]*rep)
 
         # usno_b1_id
         add("%s", ("%04i" % zone_number) + "-" + ("%07i" % object_counter))
@@ -162,7 +162,7 @@ for zone_number in range(0, max_zone_number + 1):
         # pm_prob
         add("%i", get_packed(rfs[2], 10, 1, 1))
         # pm_catalog_correction_flag
-        add("%i",  get_packed(rfs[2], 10, 0, 1))
+        add("%i", get_packed(rfs[2], 10, 0, 1))
 
         # pm_ra_sigma 
         add("%i", get_packed(rfs[3], 10, 7, 3))
@@ -186,57 +186,72 @@ for zone_number in range(0, max_zone_number + 1):
         # ys4_correlation_flag 
         add("%i", get_packed(rfs[4], 10, 0, 1))
 
-        # blue_1_mag
-        add("%.2f", get_packed(rfs[5], 10, 6, 4) / 100)
-        # blue_1_field
-        add("%i", get_packed(rfs[5], 10, 3, 3))
-        # blue_1_survey
-        add("%i", get_packed(rfs[5], 10, 2, 1))
-        # blue_1_galaxy_star_sep
-        add("%i", get_packed(rfs[5], 10, 0, 2))
 
-        # red_1_mag
-        add("%.2f", get_packed(rfs[6], 10, 6, 4) / 100)
-        # red_1_field
-        add("%i", get_packed(rfs[6], 10, 3, 3))
-        # red_1_survey
-        add("%i", get_packed(rfs[6], 10, 2, 1))
-        # red_1_galaxy_star_sep
-        add("%i", get_packed(rfs[6], 10, 0, 2))
+        # Remaining fields are said to be missing if the whole packed field is 0,
+        # in that case we write ? to all those fields.
 
-        # blue_2_mag
-        add("%.2f", get_packed(rfs[7], 10, 6, 4) / 100)
-        # blue_2_field
-        add("%i", get_packed(rfs[7], 10, 3, 3))
-        # blue_2_survey
-        add("%i", get_packed(rfs[7], 10, 2, 1))
-        # blue_2_galaxy_star_sep
-        add("%i", get_packed(rfs[7], 10, 0, 2))
+        if rfs[5] == 0:
+            add("%s", "?", 4)
+        else:
+            # blue_1_mag
+            add("%.2f", get_packed(rfs[5], 10, 6, 4) / 100)
+            # blue_1_field
+            add("%i", get_packed(rfs[5], 10, 3, 3))
+            # blue_1_survey
+            add("%i", get_packed(rfs[5], 10, 2, 1))
+            # blue_1_galaxy_star_sep
+            add("%i", get_packed(rfs[5], 10, 0, 2))
 
-        # red_2_mag
-        add("%.2f", get_packed(rfs[8], 10, 6, 4) / 100)
-        # red_2_field
-        add("%i", get_packed(rfs[8], 10, 3, 3))
-        # red_2_survey
-        add("%i", get_packed(rfs[8], 10, 2, 1))
-        # red_2_galaxy_star_sep
-        add("%i", get_packed(rfs[8], 10, 0, 2))
+        if rfs[6] == 0:
+            add("%s", "?", 4)
+        else:
+            # red_1_mag
+            add("%.2f", get_packed(rfs[6], 10, 6, 4) / 100)
+            # red_1_field
+            add("%i", get_packed(rfs[6], 10, 3, 3))
+            # red_1_survey
+            add("%i", get_packed(rfs[6], 10, 2, 1))
+            # red_1_galaxy_star_sep
+            add("%i", get_packed(rfs[6], 10, 0, 2))
 
-        # ir_mag
-        add("%.2f", get_packed(rfs[9], 10, 6, 4) / 100)
-        # ir_field
-        add("%i", get_packed(rfs[9], 10, 3, 3))
-        # ir_survey
-        add("%i", get_packed(rfs[9], 10, 2, 1))
-        # ir_galaxy_star_sep
-        add("%i", get_packed(rfs[9], 10, 0, 2))
+        if rfs[7] == 0:
+            add("%s", "?", 4)
+        else:
+            # blue_2_mag
+            add("%.2f", get_packed(rfs[7], 10, 6, 4) / 100)
+            # blue_2_field
+            add("%i", get_packed(rfs[7], 10, 3, 3))
+            # blue_2_survey
+            add("%i", get_packed(rfs[7], 10, 2, 1))
+            # blue_2_galaxy_star_sep
+            add("%i", get_packed(rfs[7], 10, 0, 2))
 
-        # Below are some packed fields where an if-check is used, this is because these fields should
-        # be treated as missing when set to all zero. Otherwise we'd end up with -50 residual.
+        if rfs[8] == 0:
+            add("%s", "?", 4)
+        else:
+            # red_2_mag
+            add("%.2f", get_packed(rfs[8], 10, 6, 4) / 100)
+            # red_2_field
+            add("%i", get_packed(rfs[8], 10, 3, 3))
+            # red_2_survey
+            add("%i", get_packed(rfs[8], 10, 2, 1))
+            # red_2_galaxy_star_sep
+            add("%i", get_packed(rfs[8], 10, 0, 2))
+
+        if rfs[9] == 0:
+            add("%s", "?", 4)
+        else:
+            # ir_mag
+            add("%.2f", get_packed(rfs[9], 10, 6, 4) / 100)
+            # ir_field
+            add("%i", get_packed(rfs[9], 10, 3, 3))
+            # ir_survey
+            add("%i", get_packed(rfs[9], 10, 2, 1))
+            # ir_galaxy_star_sep
+            add("%i", get_packed(rfs[9], 10, 0, 2))
+
         if rfs[10] == 0:
-            add("%i", 0)
-            add("%i", 0)
-            add("%i", 0)
+            add("%s", "?", 3)
         else:
             # blue_1_xi_res
             add("%.2f", get_packed(rfs[10], 9, 5, 4) / 100 - 50)
@@ -246,9 +261,7 @@ for zone_number in range(0, max_zone_number + 1):
             add("%i", get_packed(rfs[10], 9, 0, 1))
 
         if rfs[11] == 0:
-            add("%i", 0)
-            add("%i", 0)
-            add("%i", 0)
+            add("%s", "?", 3)
         else:
             # red_1_xi_res
             add("%.2f", get_packed(rfs[11], 9, 5, 4) / 100 - 50)
@@ -258,9 +271,7 @@ for zone_number in range(0, max_zone_number + 1):
             add("%i", get_packed(rfs[11], 9, 0, 1))
 
         if rfs[12] == 0:
-            add("%i", 0)
-            add("%i", 0)
-            add("%i", 0)
+            add("%s", "?", 3)
         else:
             # blue_2_xi_res
             add("%.2f", get_packed(rfs[12], 9, 5, 4) / 100 - 50)
@@ -270,9 +281,7 @@ for zone_number in range(0, max_zone_number + 1):
             add("%i", get_packed(rfs[12], 9, 0, 1))
 
         if rfs[13] == 0:
-            add("%i", 0)
-            add("%i", 0)
-            add("%i", 0)
+            add("%s", "?", 3)
         else:
             # red_2_xi_res
             add("%.2f", get_packed(rfs[13], 9, 5, 4) / 100 - 50)
@@ -282,9 +291,7 @@ for zone_number in range(0, max_zone_number + 1):
             add("%i", get_packed(rfs[13], 9, 0, 1))
 
         if rfs[14] == 0:
-            add("%i", 0)
-            add("%i", 0)
-            add("%i", 0)
+            add("%s", "?", 3)
         else:
             # ir_xi_res
             add("%.2f", get_packed(rfs[14], 9, 5, 4) / 100 - 50)
@@ -294,15 +301,34 @@ for zone_number in range(0, max_zone_number + 1):
             add("%i", get_packed(rfs[14], 9, 0, 1))
 
         # blue_1_scan_lookback_index
-        add("%i", rfs[15])
+        if rfs[15] == 0:
+            add("%s", "?")
+        else:
+            add("%i", rfs[15])
+
         # red_1_scan_lookback_index
-        add("%i", rfs[16])
+        if rfs[16] == 0:
+            add("%s", "?")
+        else:
+            add("%i", rfs[16])
+
         # blue_2_scan_lookback_index
-        add("%i", rfs[17])
+        if rfs[17] == 0:
+            add("%s", "?")
+        else:
+            add("%i", rfs[17])
+
         # red_2_scan_lookback_index
-        add("%i", rfs[18])
+        if rfs[18] == 0:
+            add("%s", "?")
+        else:
+            add("%i", rfs[18])
+
         # ir_scan_lookback_index
-        add("%i", rfs[19])
+        if rfs[19] == 0:
+            add("%s", "?")
+        else:
+            add("%i", rfs[19])
 
         file_out.handle.write(str.join(",", out_fields) + "\n")
         object_counter = object_counter + 1
