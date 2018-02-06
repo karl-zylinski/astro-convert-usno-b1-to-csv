@@ -16,7 +16,7 @@ import datetime
 # Useful configuration parameters
 max_size_per_output_file = 52428800 # bytes.
 start_zone_number = 0
-end_zone_number = 400
+end_zone_number = 1799
 
 columns = [ "usno_b1_id",
             "j2000_ra",
