@@ -11,7 +11,12 @@
 
 import os
 import struct
-import math
+import datetime
+
+# Useful configuration parameters
+max_size_per_output_file = 52428800 # bytes.
+start_zone_number = 0
+end_zone_number = 400
 
 columns = [ "usno_b1_id",
             "j2000_ra",
@@ -72,28 +77,28 @@ columns = [ "usno_b1_id",
             "ir_scan_lookback_index" ]
 
 # Gets field from packed int. For example we might have 4718914587 where
-# different parts of the int measure different things.
+# we want to get a part of this number. packed_field_exp_len is passed
+# because fields should always be of length in format, so pad with zeros.
 def get_packed(packed_field, packed_field_exp_len, start, field_len):
-    packed_field_s = str(packed_field)
-    packed_field_len = len(packed_field_s)
-    len_diff = packed_field_exp_len - packed_field_len
-    start_corr = start - len_diff
-    extracted = packed_field_s[start_corr:start_corr+field_len]
+    packed_field_padded = str(packed_field).zfill(packed_field_exp_len)
+    extracted = packed_field_padded[start:start+field_len]
     return 0 if extracted == '' else int(extracted)
 
-prev_folder = ""
-output_counter = 0
-output_max_file_size = 209715200 # 200 megabytes
+output_folder = datetime.datetime.now().strftime("output-%Y-%m-%d_%H-%M")
+
+if os.path.isdir(output_folder) == False:
+    os.mkdir(output_folder)
 
 class OutputFile:
     index = -1
     handle = None
 
+# Used when output file hits size max_size_per_output_file
 def start_new_output_file(current_file):
     if current_file != None:
         current_file.handle.close()
     num = 0 if current_file == None else current_file.index + 1
-    new_name = "usno-b1-" + ("%i" % num) + ".csv"
+    new_name = "%s/usno-b1-%i.csv"%(output_folder, num)
     print("Starting new output file: " + new_name)
     handle = open(new_name, mode="w")
     handle.write(str.join(",", columns) + "\n")
@@ -103,10 +108,12 @@ def start_new_output_file(current_file):
     return output_file
 
 file_out = start_new_output_file(None)
-max_zone_number = 1799
+prev_folder = ""
 
-for zone_number in range(0, max_zone_number + 1):
-    if file_out.handle.tell() >= output_max_file_size:
+for zone_number in range(start_zone_number, end_zone_number + 1):
+    # If one wants the script to follow max_size_per_output_file more precisely,
+    # move following two lines inside the while-loop that processes each cat-file.
+    if file_out.handle.tell() >= max_size_per_output_file:
         file_out = start_new_output_file(file_out)
 
     folder_name = ("%04i" % zone_number)[0:3]
@@ -115,7 +122,7 @@ for zone_number in range(0, max_zone_number + 1):
         print("Processing folder " + folder_name)
 
     prev_folder = folder_name
-    file_in_path = "input-data/" + folder_name + "/b" + ("%04i" % zone_number) + ".cat"
+    file_in_path = "input-data/%s/b%04i.cat" % (folder_name, zone_number)
 
     if os.path.isfile(file_in_path) == False:
         print("Aborted at " + file_in_path + ": File does not exist")
@@ -130,24 +137,41 @@ for zone_number in range(0, max_zone_number + 1):
         file_in.close()
         continue
 
+    # This is the "second half" of the USNO B id, first is zone number. Ex: 0001-0000123 where 0001
+    # is the zone number and 0000123 is the object counter. The object counter is reset for each zone.
     object_counter = 1
 
+    # This processes a specific .cat-file, row for row
     while file_in.tell() != file_in_size:
         # Indices to variable raw_fields refer to the different packed ints described in format
         # (see comment at top). I process the fields in exactly the same order as in the format and
         # use quantas and ranges specified there to extract values. Any transformations other than
         # quanta/range adjustments are explicitly explained below.
         packed_ints_per_row = 20
-        rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length))
+        rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length)) # RawFieldS
+
+        def is_row_ok(row):
+            for cell in row:
+                if cell < 0:
+                    return False
+
+            return True
+
+        usno_id = "%04i-%07i" % (zone_number, object_counter)
+
+        if is_row_ok(rfs) == False:
+            print("Skipped object %s at byte %i in file %s, failed sanity check." % (usno_id, file_in.tell() - row_length, file_in_path))
+            continue
+
         out_fields = []
 
-        def add(fmt, val, rep=1):
-            # Only do formatting if val is not zero
+        def add(fmt, val, repeat=1):
+            # Only do formatting if val is not zero, saves some space for floats
             formatted = "0" if val == 0 else fmt % val
-            out_fields.extend([formatted]*rep)
+            out_fields.extend([formatted]*repeat)
 
         # usno_b1_id
-        add("%s", ("%04i" % zone_number) + "-" + ("%07i" % object_counter))
+        add("%s", usno_id)
 
         # ra
         add("%.6f", rfs[0] / 100 / 60 / 60) 
@@ -394,8 +418,10 @@ units = [ "id number in catalog",
           "lookback index into PMM scan file",
           "lookback index into PMM scan file" ]
 
-assert len(columns) == len(units), "Mismatch between columns and their units"
-desc_file = open("csv-description.txt", mode="w")
+assert len(columns) == len(units), "Mismatch between number of columns and units"
+desc_file_path = output_folder + "/column-description.txt"
+print("Writing descriptions of columns in output to: " + output_folder)
+desc_file = open(desc_file_path, mode="w")
 desc_file.write("In the units column, \"format: X\" refers to\nfootnotes in the input-data-format.html or\nhttp://tdc-www.harvard.edu/catalogs/ub1.format.html\n\n")
 desc_file.write("column name" + ' ' * 19 + "unit" + "\n")
 desc_file.write("-" * 34 + "\n")

@@ -1,0 +1,9 @@
+convert.py converts USNO B1.0 data from its orignal binary format to csv.
+
+Input-data can be downloaded using torrent supplied next to this file, input-data.torrent.
+
+The data should be placed inside input-data folder and extracted so that the paths look like: input-data/000/b0000.cat, input-data/000/b0001.cat etc.
+
+The format of the input-data is described by input-data-format.html or http://tdc-www.harvard.edu/catalogs/ub1.format.html
+
+If you just want some data to test with without downloading torrent, then use the supplied sample.cat, place it as input-data/000/b0000.cat (sample.cat is a copy of that datafile from the torrent).
