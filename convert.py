@@ -71,66 +71,6 @@ columns = [ "usno_b1_id",
             "red_2_scan_lookback_index",
             "ir_scan_lookback_index" ]
 
-units = [ "id number in catalog",
-          "deg",
-          "deg",
-          "mas/year",
-          "mas/year",
-          "0.1",
-          "0 or 1",
-          "mas/year",
-          "mas/year",
-          "0.1 arcsec",
-          "0.1 arcsec",
-          "count",
-          "0 or 1",
-          "mas",
-          "mas",
-          "year",
-          "0 or 1",
-          "mag",
-          "field number in survey",
-          "survey number (format: h)",
-          "similarity on scale 0 - 11 (format: i)",
-          "mag",
-          "field number in survey",
-          "survey number (format: h)",
-          "similarity on scale 0 - 11 (format: i)",
-          "mag",
-          "field number in survey",
-          "survey number (format: h)",
-          "similarity on scale 0 - 11 (format: i)",
-          "mag",
-          "field number in survey",
-          "survey number (format: h)",
-          "similarity on scale 0 - 11 (format: i)",
-          "mag",
-          "field number in survey",
-          "survey number (format: h)",
-          "similarity on scale 0 - 11 (format: i)",
-          "arcsec",
-          "arcsec",
-          "photometric calibration source number (format: j)",
-          "arcsec",
-          "arcsec",
-          "photometric calibration source number (format: j)",
-          "arcsec",
-          "arcsec",
-          "photometric calibration source number (format: j)",
-          "arcsec",
-          "arcsec",
-          "photometric calibration source number (format: j)",
-          "arcsec",
-          "arcsec",
-          "photometric calibration source number (format: j)",
-          "lookback index into PMM scan file",
-          "lookback index into PMM scan file",
-          "lookback index into PMM scan file",
-          "lookback index into PMM scan file",
-          "lookback index into PMM scan file" ]
-
-assert len(columns) == len(units), "Mismatch between columns and their units"
-
 # Gets field from packed int. For example we might have 4718914587 where
 # different parts of the int measure different things.
 def get_packed(packed_field, packed_field_exp_len, start, field_len):
@@ -153,7 +93,7 @@ def start_new_output_file(current_file):
     if current_file != None:
         current_file.handle.close()
     num = 0 if current_file == None else current_file.index + 1
-    new_name = "output" + ("%i" % num) + ".csv"
+    new_name = "usno-b1-" + ("%i" % num) + ".csv"
     print("Starting new output file: " + new_name)
     handle = open(new_name, mode="w")
     handle.write(str.join(",", columns) + "\n")
@@ -178,6 +118,7 @@ for zone_number in range(0, max_zone_number + 1):
     file_in_path = "input-data/" + folder_name + "/b" + ("%04i" % zone_number) + ".cat"
 
     if os.path.isfile(file_in_path) == False:
+        print("Aborted at " + file_in_path + ": File does not exist")
         break
 
     file_in = open(file_in_path, mode = "rb")
@@ -369,3 +310,73 @@ for zone_number in range(0, max_zone_number + 1):
     file_in.close()
 
 file_out.handle.close()
+units = [ "id number in catalog",
+          "deg",
+          "deg",
+          "mas/year",
+          "mas/year",
+          "0.1",
+          "0 or 1",
+          "mas/year",
+          "mas/year",
+          "0.1 arcsec",
+          "0.1 arcsec",
+          "number of detections",
+          "0 or 1 (format: e)",
+          "mas",
+          "mas",
+          "year",
+          "0 or 1 (format: f)",
+          "mag",
+          "field number in survey",
+          "survey number (format: h)",
+          "similarity on scale 0 - 11 (format: i)",
+          "mag",
+          "field number in survey",
+          "survey number (format: h)",
+          "similarity on scale 0 - 11 (format: i)",
+          "mag",
+          "field number in survey",
+          "survey number (format: h)",
+          "similarity on scale 0 - 11 (format: i)",
+          "mag",
+          "field number in survey",
+          "survey number (format: h)",
+          "similarity on scale 0 - 11 (format: i)",
+          "mag",
+          "field number in survey",
+          "survey number (format: h)",
+          "similarity on scale 0 - 11 (format: i)",
+          "arcsec",
+          "arcsec",
+          "photometric calibration source number (format: j)",
+          "arcsec",
+          "arcsec",
+          "photometric calibration source number (format: j)",
+          "arcsec",
+          "arcsec",
+          "photometric calibration source number (format: j)",
+          "arcsec",
+          "arcsec",
+          "photometric calibration source number (format: j)",
+          "arcsec",
+          "arcsec",
+          "photometric calibration source number (format: j)",
+          "lookback index into PMM scan file",
+          "lookback index into PMM scan file",
+          "lookback index into PMM scan file",
+          "lookback index into PMM scan file",
+          "lookback index into PMM scan file" ]
+
+assert len(columns) == len(units), "Mismatch between columns and their units"
+desc_file = open("csv-description.txt", mode="w")
+desc_file.write("In the units column, \"format: X\" refers to\nfootnotes in the input-data-format.html or\nhttp://tdc-www.harvard.edu/catalogs/ub1.format.html\n\n")
+desc_file.write("column name" + ' ' * 19 + "unit" + "\n")
+desc_file.write("-" * 34 + "\n")
+
+for i in range(0, len(columns)):
+    c = columns[i]
+    u = units[i]
+    desc_file.write(c + ' ' * (30-len(c)) + u + "\n")
+
+desc_file.close()
