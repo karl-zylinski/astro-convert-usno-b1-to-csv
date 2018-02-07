@@ -17,6 +17,7 @@ import datetime
 max_size_per_output_file = 52428800 # bytes.
 start_zone_number = 0
 end_zone_number = 1799
+log_bad_objects = False
 
 columns = [ "usno_b1_id",
             "j2000_ra",
@@ -160,6 +161,13 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
 
         if is_row_ok(rfs) == False:
             print("Skipped object %s at byte %i in file %s, failed sanity check." % (usno_id, file_in.tell() - row_length, file_in_path))
+            
+            if log_bad_objects == True:
+                print("Fields:")
+                for cell in rfs:
+                    print("%i" % cell)
+
+                print("")
             continue
 
         out_fields = []
