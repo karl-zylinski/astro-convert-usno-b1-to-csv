@@ -139,14 +139,11 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
 
     # This is the "second half" of the USNO B id, first is zone number. Ex: 0001-0000123 where 0001
     # is the zone number and 0000123 is the object counter. The object counter is reset for each zone.
-    object_counter = 1
+    object_counter = 0
 
     # This processes a specific .cat-file, row for row
     while file_in.tell() != file_in_size:
-        # Indices to variable raw_fields refer to the different packed ints described in format
-        # (see comment at top). I process the fields in exactly the same order as in the format and
-        # use quantas and ranges specified there to extract values. Any transformations other than
-        # quanta/range adjustments are explicitly explained below.
+        object_counter = object_counter + 1
         packed_ints_per_row = 20
         rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length)) # RawFieldS
 
@@ -169,6 +166,11 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
             # Only do formatting if val is not zero, saves some space for floats
             formatted = "0" if val == 0 else fmt % val
             out_fields.extend([formatted]*repeat)
+
+        # Indices to variable rfs (raw_fields) refer to the different packed ints described in format
+        # (see comment at top). I process the fields in exactly the same order as in the format and
+        # use quantas and ranges specified there to extract values. Any transformations other than
+        # quanta/range adjustments are explicitly explained below.
 
         # usno_b1_id
         add("%s", usno_id)
@@ -355,7 +357,6 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
             add("%i", rfs[19])
 
         file_out.handle.write(str.join(",", out_fields) + "\n")
-        object_counter = object_counter + 1
 
     file_in.close()
 
