@@ -141,7 +141,7 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
     # is the zone number and 0000123 is the object counter. The object counter is reset for each zone.
     object_counter = 0
 
-    # This processes a specific .cat-file, row for row
+    # This processes the current .cat-file, row for row
     while file_in.tell() != file_in_size:
         object_counter = object_counter + 1
         packed_ints_per_row = 20
@@ -363,6 +363,10 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
     file_in.close()
 
 file_out.handle.close()
+
+
+# The remaining lines are for making a file containing descriptions of columns and units
+
 units = [ "id number in catalog",
           "deg",
           "deg",
