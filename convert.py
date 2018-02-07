@@ -423,7 +423,7 @@ assert len(columns) == len(units), "Mismatch between number of columns and units
 desc_file_path = output_folder + "/column-description.txt"
 print("Writing descriptions of columns in output to: " + output_folder)
 desc_file = open(desc_file_path, mode="w")
-desc_file.write("In the units column, \"format: X\" refers to\nfootnotes in the input-data-format.html or\nhttp://tdc-www.harvard.edu/catalogs/ub1.format.html\n\n")
+desc_file.write("In the units column, \"format: X\" refers to\nfootnotes in the input-data-format.html or\nhttp://tdc-www.harvard.edu/catalogs/ub1.format.html\n\nFields containing ? are missing for that object.\n\n")
 desc_file.write("column name" + ' ' * 19 + "unit" + "\n")
 desc_file.write("-" * 34 + "\n")
 
