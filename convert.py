@@ -145,6 +145,8 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
     while file_in.tell() != file_in_size:
         object_counter = object_counter + 1
         packed_ints_per_row = 20
+
+        # This turns the next 80 bytes of the file into 20 32-bit integers, which are processed below.
         rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length)) # RawFieldS
 
         def is_row_ok(row):
