@@ -32,7 +32,7 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
         fourth_field = int.from_bytes(file_in.read(4), byteorder='little', signed=True)
         fifth_field = int.from_bytes(file_in.read(4), byteorder='little', signed=True)
 
-        if fourth_field == 21:
+        if fourth_field == 19:
             num_bad_objects_4 = num_bad_objects_4 + 1
 
         if fifth_field < 0:
