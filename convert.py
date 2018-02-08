@@ -12,12 +12,15 @@
 import os
 import struct
 import datetime
+import time
 
 # Useful configuration parameters
 max_size_per_output_file = 52428800 # bytes.
 start_zone_number = 0
 end_zone_number = 1799
 log_bad_objects = False
+
+start_time = time.time()
 
 columns = [ "usno_b1_id",
             "j2000_ra",
@@ -75,7 +78,8 @@ columns = [ "usno_b1_id",
             "red_1_scan_lookback_index",
             "blue_2_scan_lookback_index",
             "red_2_scan_lookback_index",
-            "ir_scan_lookback_index" ]
+            "ir_scan_lookback_index",
+            "broken_fifth_field_flag" ]
 
 # Gets field from packed int. For example we might have 4718914587 where
 # we want to get a part of this number. packed_field_exp_len is passed
@@ -150,25 +154,6 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
         # This turns the next 80 bytes of the file into 20 32-bit integers, which are processed below.
         rfs = struct.unpack('%di' % packed_ints_per_row, file_in.read(row_length)) # RawFieldS
 
-        def is_row_ok(row):
-            for cell in row:
-                if cell < 0:
-                    return False
-
-            return True
-
-        usno_id = "%04i-%07i" % (zone_number, object_counter)
-
-        if is_row_ok(rfs) == False:
-            print("Skipped object %s at byte %i in file %s, failed sanity check." % (usno_id, file_in.tell() - row_length, file_in_path))
-            
-            if log_bad_objects == True:
-                print("Fields:")
-                for cell in rfs:
-                    print("%i" % cell)
-
-                print("")
-            continue
 
         out_fields = []
 
@@ -183,8 +168,9 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
         # quanta/range adjustments are explicitly explained below.
 
         # usno_b1_id
+        usno_id = "%04i-%07i" % (zone_number, object_counter)
         add("%s", usno_id)
-
+        
         # ra
         add("%.6f", rfs[0] / 100 / 60 / 60) 
 
@@ -213,15 +199,22 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
         # diffraction_spike_flag
         add("%i", get_packed(rfs[3], 10, 0, 1))
 
-        # ra_sigma
-        add("%i", get_packed(rfs[4], 10, 7, 3))
-        # dec_sigma
-        add("%i", get_packed(rfs[4], 10, 4, 3))
-        # epoch
-        add("%.1f", get_packed(rfs[4], 10, 1, 3) / 10 + 1950)
-        # ys4_correlation_flag 
-        add("%i", get_packed(rfs[4], 10, 0, 1))
 
+        # This is a check for bad USNO B1 data where the fifth field has an erroneous negative value
+        broken_fifth_field_flag = 0
+
+        if rfs[4] < 0:
+            add("%s", "?", 4)
+            broken_fifth_field_flag = 1
+        else:
+            # ra_sigma
+            add("%i", get_packed(rfs[4], 10, 7, 3))
+            # dec_sigma
+            add("%i", get_packed(rfs[4], 10, 4, 3))
+            # epoch
+            add("%.1f", get_packed(rfs[4], 10, 1, 3) / 10 + 1950)
+            # ys4_correlation_flag 
+            add("%i", get_packed(rfs[4], 10, 0, 1))
 
         # Remaining fields are said to be missing if the whole packed field is 0,
         # in that case we write ? to all those fields.
@@ -366,12 +359,15 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
         else:
             add("%i", rfs[19])
 
+        # broken_fifth_field_flag
+        add("%i", broken_fifth_field_flag)
+
+        assert len(columns) == len(out_fields), "Trying to write object %s with fewer fields than there are columns" % usno_id
         file_out.handle.write(str.join(",", out_fields) + "\n")
 
     file_in.close()
 
 file_out.handle.close()
-
 
 # The remaining lines are for making a file containing descriptions of columns and units
 
@@ -431,7 +427,8 @@ units = [ "id number in catalog",
           "lookback index into PMM scan file",
           "lookback index into PMM scan file",
           "lookback index into PMM scan file",
-          "lookback index into PMM scan file" ]
+          "lookback index into PMM scan file",
+          "1 if columns j2000_ra_sigma through ys4_correlation_flag are broken due to error in original data"]
 
 assert len(columns) == len(units), "Mismatch between number of columns and units"
 desc_file_path = output_folder + "/column-description.txt"
@@ -447,3 +444,6 @@ for i in range(0, len(columns)):
     desc_file.write(c + ' ' * (30-len(c)) + u + "\n")
 
 desc_file.close()
+end_time = time.time()
+seconds_elapsed = end_time - start_time
+print("\nConversion done, time taken: %i seconds" % seconds_elapsed)
