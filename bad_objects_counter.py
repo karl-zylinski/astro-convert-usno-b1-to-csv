@@ -6,13 +6,10 @@ import os
 import struct
 
 start_zone_number = 0
-end_zone_number = 40
-log_bad_objects = False
-
+end_zone_number = 1799
 packed_ints_per_row = 20
 row_length = 80
-num_bad_objects_5 = 0
-num_bad_objects_4 = 0
+num_bad_objects_field_5_zero = 0
 prev_folder = ""
 
 for zone_number in range(start_zone_number, end_zone_number + 1):
@@ -29,18 +26,13 @@ for zone_number in range(start_zone_number, end_zone_number + 1):
 
     # This processes the current .cat-file, row for row
     while file_in.tell() < file_in_size:
-        fourth_field = int.from_bytes(file_in.read(4), byteorder='little', signed=True)
         fifth_field = int.from_bytes(file_in.read(4), byteorder='little', signed=True)
 
-        if fourth_field == 19:
-            num_bad_objects_4 = num_bad_objects_4 + 1
-
         if fifth_field < 0:
-            num_bad_objects_5 = num_bad_objects_5 + 1
+            num_bad_objects_field_5_zero = num_bad_objects_field_5_zero + 1
         
         file_in.seek(72, 1)
 
     file_in.close()
 
-print("Number of bad objects (negative fifth field): %i" % num_bad_objects_5)
-print("Number of bad objects (fourth field is 19): %i" % num_bad_objects_4)
+print("Number of bad objects (negative fifth field): %i" % num_bad_objects_field_5_zero)
