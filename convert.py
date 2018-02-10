@@ -89,7 +89,7 @@ def get_packed(packed_field, packed_field_exp_len, start, field_len):
     extracted = packed_field_padded[start:start+field_len]
     return 0 if extracted == '' else int(extracted)
 
-output_folder = datetime.datetime.now().strftime("output-%Y-%m-%d_%H-%M")
+output_folder = datetime.datetime.now().strftime("usno-b1-csv-%Y-%m-%d_%H-%M")
 
 if os.path.isdir(output_folder) == False:
     os.mkdir(output_folder)
